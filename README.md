@@ -23,7 +23,8 @@ Usage
 
 ```javascript
 var permissions = cordova.plugins.permissions;
-permissions.checkPermission(permission, successCallback, errorCallback);
+permissions.checkPermission(permission, callback);
+permissions.checkPermissions(permission, callback);
 permissions.requestPermission(permission, successCallback, errorCallback);
 permissions.requestPermissions(permissions, successCallback, errorCallback);
 ```
@@ -56,7 +57,7 @@ var permissions = cordova.plugins.permissions;
 #### Quick check
 ```js
 
-permissions.hasPermission(permissions.CAMERA, function( status ){
+permissions.checkPermission(permissions.CAMERA, function( status ){
   if ( status.hasPermission ) {
     console.log("Yes :D ");
   }
@@ -84,7 +85,7 @@ var list = [
       permissions.GET_ACCOUNTS
     ];
 
-permissions.hasPermission(list, callback, null);
+permissions.checkPermission(list, success);
 
 function error() {
   console.warn('Camera or Accounts permission is not turned on');
