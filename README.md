@@ -24,7 +24,7 @@ Usage
 ```javascript
 var permissions = cordova.plugins.permissions;
 permissions.checkPermission(permission, callback);
-permissions.checkPermissions(permission, callback);
+permissions.checkPermission(permissions, callback);
 permissions.requestPermission(permission, successCallback, errorCallback);
 permissions.requestPermissions(permissions, successCallback, errorCallback);
 ```
