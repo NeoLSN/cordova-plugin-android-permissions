@@ -84,22 +84,14 @@ var list = [
       permissions.GET_ACCOUNTS
     ];
 
-permissions.hasPermission(list, callback, null);
+permissions.requestPermissions(list, success, error);
 
 function error() {
-  console.warn('Camera or Accounts permission is not turned on');
+  console.warn('Error requesting permissions');
 }
 
 function success( status ) {
-  if( !status.hasPermission ) {
-  
-    permissions.requestPermission(
-      list,
-      function(status) {
-        if( !status.hasPermission ) error();
-      },
-      error);
-  }
+   console.warn('Success requesting permissions');
 }
 ```
 
