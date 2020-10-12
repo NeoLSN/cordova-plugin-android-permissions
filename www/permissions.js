@@ -3,6 +3,7 @@ var permissionsName = 'Permissions';
 function Permissions() {
 
     this.ACCESS_CHECKIN_PROPERTIES = 'android.permission.ACCESS_CHECKIN_PROPERTIES';
+    this.ACCESS_BACKGROUND_LOCATION = 'android.permission.ACCESS_BACKGROUND_LOCATION';
     this.ACCESS_COARSE_LOCATION = 'android.permission.ACCESS_COARSE_LOCATION';
     this.ACCESS_FINE_LOCATION = 'android.permission.ACCESS_FINE_LOCATION';
     this.ACCESS_LOCATION_EXTRA_COMMANDS = 'android.permission.ACCESS_LOCATION_EXTRA_COMMANDS';
