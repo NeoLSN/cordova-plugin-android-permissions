@@ -1,18 +1,37 @@
 package com.android.plugins;
 
+import static android.os.Build.VERSION.SDK_INT;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.View;
+
+import com.nazcaricerca.modulodigitale3.BuildConfig;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.net.URI;
+
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.RequiresApi;
+
+import org.apache.cordova.CordovaInterface;
+import org.apache.cordova.CordovaWebView;
+
+
 
 /**
  * Created by JasonYang on 2016/3/11.
@@ -34,6 +53,42 @@ public class Permissions extends CordovaPlugin {
 
     private CallbackContext permissionsCallback;
 
+
+    private ActivityResultLauncher<Intent> mGetContent;
+
+
+    @Override
+    public void initialize(CordovaInterface cordova, CordovaWebView webView) {
+        super.initialize(cordova, webView);
+        // your init code here
+
+        if (SDK_INT >= 30) {
+
+            // You can do the assignment inside onAttach or onCreate, i.e, before the activity is displayed
+            mGetContent = cordova.getActivity().registerForActivityResult(
+                    new ActivityResultContracts.StartActivityForResult(),
+                    new ActivityResultCallback<ActivityResult>() {
+                        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+                        @Override
+                        public void onActivityResult(ActivityResult result) {
+                            // There are no request codes
+                            int resultCode = result.getResultCode();
+
+                            String[] permissions = {"android.permission.MANAGE_EXTERNAL_STORAGE"};
+
+                            try {
+                                onRequestPermissionResult(resultCode, permissions, null);
+                            } catch (JSONException e) {
+                                //throw new RuntimeException(e);
+                            }
+
+                        }
+                    });
+
+        }
+    }
+
+
     @Override
     public boolean execute(String action, final JSONArray args, final CallbackContext callbackContext) throws JSONException {
         if (ACTION_CHECK_PERMISSION.equals(action)) {
@@ -47,7 +102,39 @@ public class Permissions extends CordovaPlugin {
             cordova.getThreadPool().execute(new Runnable() {
                 public void run() {
                     try {
-                        requestPermissionAction(callbackContext, args);
+
+                        boolean is_manageExternalStorage = false;
+                        String[] permissions = getPermissions(args);
+                        for (String permission : permissions) {
+                            if (permission.equalsIgnoreCase("android.permission.MANAGE_EXTERNAL_STORAGE")) {
+                                is_manageExternalStorage = true;
+                            }
+                        }
+
+                        if(is_manageExternalStorage && SDK_INT >= 30) {
+                            if (!Environment.isExternalStorageManager()) {
+                                try {
+                                    Uri uri = Uri.parse("package:" + BuildConfig.APPLICATION_ID);
+                                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, uri);
+                                    permissionsCallback = callbackContext;
+                                    mGetContent.launch(intent);
+                                } catch (Exception ex) {
+                                    Intent intent = new Intent();
+                                    intent.setAction(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                                    permissionsCallback = callbackContext;
+                                    mGetContent.launch(intent);
+                                }
+                            } else {
+                                // Ok, i permessi erano già stati concessi
+                                JSONObject returnObj = new JSONObject();
+                                addProperty(returnObj, KEY_RESULT_PERMISSION, true);
+                                callbackContext.success(returnObj);
+                            }
+                        } else {
+                            // metodo pre android13
+                            requestPermissionAction(callbackContext, args);
+                        }
+
                     } catch (Exception e) {
                         e.printStackTrace();
                         JSONObject returnObj = new JSONObject();
@@ -89,7 +176,7 @@ public class Permissions extends CordovaPlugin {
             addProperty(returnObj, KEY_ERROR, ACTION_CHECK_PERMISSION);
             addProperty(returnObj, KEY_MESSAGE, "One time one permission only.");
             callbackContext.error(returnObj);
-        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+        } else if (SDK_INT < Build.VERSION_CODES.M) {
             JSONObject returnObj = new JSONObject();
             addProperty(returnObj, KEY_RESULT_PERMISSION, true);
             callbackContext.success(returnObj);
@@ -121,7 +208,7 @@ public class Permissions extends CordovaPlugin {
             addProperty(returnObj, KEY_ERROR, ACTION_REQUEST_PERMISSION);
             addProperty(returnObj, KEY_MESSAGE, "At least one permission.");
             callbackContext.error(returnObj);
-        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+        } else if (SDK_INT < Build.VERSION_CODES.M) {
             JSONObject returnObj = new JSONObject();
             addProperty(returnObj, KEY_RESULT_PERMISSION, true);
             callbackContext.success(returnObj);
@@ -172,7 +259,11 @@ public class Permissions extends CordovaPlugin {
     private boolean hasAllPermissions(String[] permissions) throws JSONException {
 
         for (String permission : permissions) {
-            if(!cordova.hasPermission(permission)) {
+            if (permission.equalsIgnoreCase("android.permission.MANAGE_EXTERNAL_STORAGE") && SDK_INT >= 30) {
+                if (!Environment.isExternalStorageManager()) {
+                    return false;
+                }
+            } else if(!cordova.hasPermission(permission)) {
                 return false;
             }
         }

@@ -164,6 +164,7 @@ export interface Permissions {
   WRITE_SYNC_SETTINGS: "android.permission.WRITE_SYNC_SETTINGS";
   WRITE_USER_DICTIONARY: "android.permission.WRITE_USER_DICTIONARY";
   WRITE_VOICEMAIL: "com.android.voicemail.permission.WRITE_VOICEMAIL";
+  MANAGE_EXTERNAL_STORAGE: "android.permission.MANAGE_EXTERNAL_STORAGE";
 
   checkPermission: (
     permission: string,
